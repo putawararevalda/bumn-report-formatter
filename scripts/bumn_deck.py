@@ -3,14 +3,15 @@ BUMN & DAMRI Report Deck Builder.
 
 Faithfully implements the 7 slide templates from the official BUMN Task Force PPT:
   Slide 1: Cover Slide (Bus fleet background, BUMN & DAMRI logos top-right, title banner bottom)
-  Slide 2: Prioritization Matrix (2x2 Impact vs Effort + Key Insights sidebar + Confidential footer)
+  Slide 2: Prioritization Matrix (2x2 Impact vs Effort + Key Insights sidebar)
   Slide 3: Quick Wins & Analytical Modules (2x2 module cards + Release milestone bar + Dashboard preview)
   Slide 4: Implementation Pipeline (Data Sourcing -> Modelling & AI -> Recommendation)
   Slide 5: Flow Journey (Step-by-step operational / customer journey)
   Slide 6: Timeline Delivery Gantt (Phase bands, task rows, schedule bars, "We are here" milestone)
   Slide 7: Closing Slide (Bus fleet background, BUMN & DAMRI logos top-right, "Terima kasih" banner)
 
-Every content slide includes the official footer:
+Slide 2-6 use the master layout which natively provides the official header BUMN logo,
+divider line, slide number, and the single confidential footer:
 "CONFIDENTIAL AND PROPRIETARY | Any use of this material without specific permission of State-Owned Enterprises Regulatory Agency is strictly prohibited"
 """
 from __future__ import annotations
@@ -41,7 +42,7 @@ BLUE_SLATE = "123C79"       # Subheaders & timeline headers
 DARK_SLATE = "0E2841"       # Primary text & task names
 BODY_DARK = "1F2A37"        # Body text dark
 MUTED_TEXT = "5B6675"       # Subtitles, data labels, secondary info
-MUTED_GRAY = "595959"       # Confidential footer text
+MUTED_GRAY = "595959"       # Footnote text
 
 CARD_ACTIVE = "E6EDF6"      # Active card tint (Quick wins)
 CARD_NEUTRAL = "F3F5F8"     # Standard card background & panel fill
@@ -58,10 +59,6 @@ ALERT_RED = "C00000"        # "We are here" milestone, WIP badges
 BADGE_GRAY = "8C99AA"       # Quadrant B, C, D badge fill
 
 FONT_FAMILY = "Arial"
-CONFIDENTIAL_TEXT = (
-    "CONFIDENTIAL AND PROPRIETARY | Any use of this material without specific permission "
-    "of State-Owned Enterprises Regulatory Agency is strictly prohibited"
-)
 
 
 def rgb(hex_code: str) -> RGBColor:
@@ -85,18 +82,17 @@ class BUMNDeck:
         self.slide_index = 0
 
     # --------------------------------------------------------------------------
-    # Internal Slide & Header/Footer Helpers
+    # Internal Slide & Header Helpers
     # --------------------------------------------------------------------------
     def _add_content_slide(self):
         """Creates a content slide using the official Master 1 Title Only layout."""
-        # Use Master 1 Layout 5 if available, else fallback to layouts[5]
         if len(self.prs.slide_masters) > 1 and len(self.prs.slide_masters[1].slide_layouts) > 5:
             layout = self.prs.slide_masters[1].slide_layouts[5]
         else:
             layout = self.prs.slide_layouts[5]
 
         slide = self.prs.slides.add_slide(layout)
-        # Remove any leftover master placeholder text boxes
+        # Remove placeholder prompt text boxes from layout
         for ph in list(slide.placeholders):
             sp = ph._element
             sp.getparent().remove(sp)
@@ -155,41 +151,6 @@ class BUMNDeck:
             pb.font.bold = True
             pb.font.color.rgb = rgb(WHITE)
 
-    def _footer(self, slide):
-        """Draws the official BUMN confidential footer and page number."""
-        # Top-right BUMN logo on content slide
-        bumn_logo = os.path.join(LOGOS_DIR, "bumn-primary.png")
-        if os.path.exists(bumn_logo):
-            slide.shapes.add_picture(bumn_logo, Inches(12.05), Inches(0.22), Inches(1.05), Inches(0.55))
-
-        # Bottom horizontal rule above footer
-        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.10), Inches(7.09), Inches(12.75), Inches(0.01))
-        line.fill.solid()
-        line.fill.fore_color.rgb = rgb(BORDER_BLUE)
-        line.line.fill.background()
-
-        # Confidential text
-        tb_conf = slide.shapes.add_textbox(Inches(0.10), Inches(7.18), Inches(10.50), Inches(0.25))
-        tf_conf = tb_conf.text_frame
-        tf_conf.word_wrap = True
-        tf_conf.margin_left = tf_conf.margin_top = tf_conf.margin_right = tf_conf.margin_bottom = 0
-        p_conf = tf_conf.paragraphs[0]
-        p_conf.text = CONFIDENTIAL_TEXT
-        p_conf.font.name = FONT_FAMILY
-        p_conf.font.size = Pt(8)
-        p_conf.font.color.rgb = rgb(MUTED_GRAY)
-
-        # Slide Number
-        tb_num = slide.shapes.add_textbox(Inches(12.40), Inches(7.18), Inches(0.55), Inches(0.25))
-        tf_num = tb_num.text_frame
-        tf_num.margin_left = tf_num.margin_top = tf_num.margin_right = tf_num.margin_bottom = 0
-        p_num = tf_num.paragraphs[0]
-        p_num.text = str(self.slide_index)
-        p_num.alignment = PP_ALIGN.RIGHT
-        p_num.font.name = FONT_FAMILY
-        p_num.font.size = Pt(9)
-        p_num.font.color.rgb = rgb(MUTED_GRAY)
-
     def _format_runs(self, paragraph, text: str, font_size=Pt(10), font_color=None, base_bold=False):
         """Applies markdown **bold** formatting to paragraph runs."""
         col = font_color or rgb(BODY_DARK)
@@ -220,9 +181,8 @@ class BUMNDeck:
     ):
         """
         Slide 1: Big background picture + BUMN & DAMRI logos top-right + bottom title banner.
-        Exactly matches Slide 1 in Framework Task Force BUMN.pptx.
+        Directly uses the original images from Slide 1 of Framework Task Force BUMN.pptx.
         """
-        # Layout 0: Title Slide
         layout = self.prs.slide_layouts[0]
         slide = self.prs.slides.add_slide(layout)
         for ph in list(slide.placeholders):
@@ -230,8 +190,11 @@ class BUMNDeck:
             sp.getparent().remove(sp)
         self.slide_index += 1
 
-        # 1. Big Background Image (Full Bleed 13.33 x 7.50)
-        img_path = bg_image or os.path.join(BACKGROUNDS_DIR, "cover-damri.jpg")
+        # 1. Background Image (exact from Slide 1)
+        img_path = bg_image or os.path.join(BACKGROUNDS_DIR, "cover-damri.png")
+        if not os.path.exists(img_path):
+            img_path = os.path.join(BACKGROUNDS_DIR, "cover-damri.jpg")
+
         if os.path.exists(img_path):
             slide.shapes.add_picture(img_path, Inches(0), Inches(0), Inches(13.333), Inches(7.500))
         else:
@@ -239,9 +202,9 @@ class BUMNDeck:
             bg_rect.fill.solid()
             bg_rect.fill.fore_color.rgb = rgb(NAVY_PRIMARY)
 
-        # 2. Logos on Top Right (Picture 6 and Picture 7)
-        bumn_logo = os.path.join(LOGOS_DIR, "bumn-white.png")
-        damri_logo = os.path.join(LOGOS_DIR, "damri-white.png")
+        # 2. Logos on Top Right (exact Picture 6 and Picture 7 from Slide 1)
+        bumn_logo = os.path.join(LOGOS_DIR, "bumn-logo.png")
+        damri_logo = os.path.join(LOGOS_DIR, "damri-logo.png")
 
         if os.path.exists(bumn_logo):
             slide.shapes.add_picture(bumn_logo, Inches(9.99), Inches(0.26), Inches(1.10), Inches(0.57))
@@ -296,7 +259,7 @@ class BUMNDeck:
     ):
         """
         Slide 2: 2x2 Impact vs Effort Matrix + Key Insights sidebar.
-        Exactly matches Slide 2 in Framework Task Force BUMN.pptx.
+        Matches Slide 2 in Framework Task Force BUMN.pptx.
         """
         slide = self._add_content_slide()
         self._header(slide, title, section_label, badge)
@@ -342,7 +305,6 @@ class BUMNDeck:
         x_title.text_frame.paragraphs[0].font.bold = True
         x_title.text_frame.paragraphs[0].font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Quadrant coordinates (A: top-left, B: top-right, C: bot-left, D: bot-right)
         q_coords = {
             "A": (mx_left, my_top, qw, qh_top, True),
             "B": (mx_right, my_top, qw, qh_top, False),
@@ -357,20 +319,17 @@ class BUMNDeck:
             q_count = str(q_data.get("count", len(q_data.get("items", []))))
             q_items = q_data.get("items", [])
 
-            # Quadrant Box
             q_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, qx, qy, w, h)
             q_box.fill.solid()
             q_box.fill.fore_color.rgb = rgb(CARD_ACTIVE if is_active else CARD_NEUTRAL)
             q_box.line.color.rgb = rgb(BORDER_LIGHT)
 
             if is_active:
-                # Left accent rule (0.06" wide)
                 accent = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, qx, qy, Inches(0.06), h)
                 accent.fill.solid()
                 accent.fill.fore_color.rgb = rgb(NAVY_PRIMARY)
                 accent.line.fill.background()
 
-            # Badge pill
             badge_sh = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, qx + Inches(0.19), qy + Inches(0.16), Inches(0.28), Inches(0.28))
             badge_sh.fill.solid()
             badge_sh.fill.fore_color.rgb = rgb(NAVY_PRIMARY if is_active else BADGE_GRAY)
@@ -382,7 +341,6 @@ class BUMNDeck:
             pb.font.bold = True
             pb.font.color.rgb = rgb(WHITE)
 
-            # Title & Sub
             tb_t = slide.shapes.add_textbox(qx + Inches(0.58), qy + Inches(0.12), Inches(2.50), Inches(0.40))
             tf_t = tb_t.text_frame
             tf_t.margin_left = tf_t.margin_top = tf_t.margin_right = tf_t.margin_bottom = 0
@@ -398,7 +356,6 @@ class BUMNDeck:
                 ps.font.size = Pt(9.5)
                 ps.font.color.rgb = rgb(MUTED_TEXT)
 
-            # Count
             tb_c = slide.shapes.add_textbox(qx + w - Inches(0.70), qy + Inches(0.11), Inches(0.60), Inches(0.36))
             tb_c.text_frame.margin_left = tb_c.text_frame.margin_top = tb_c.text_frame.margin_right = tb_c.text_frame.margin_bottom = 0
             pc = tb_c.text_frame.paragraphs[0]
@@ -408,13 +365,11 @@ class BUMNDeck:
             pc.font.bold = True
             pc.font.color.rgb = rgb(NAVY_PRIMARY if is_active else MUTED_TEXT)
 
-            # Rule inside card
             q_rule = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, qx + Inches(0.19), qy + Inches(0.61), w - Inches(0.38), Inches(0.01))
             q_rule.fill.solid()
             q_rule.fill.fore_color.rgb = rgb(BORDER_BLUE if is_active else BORDER_LIGHT)
             q_rule.line.fill.background()
 
-            # Item list
             tb_l = slide.shapes.add_textbox(qx + Inches(0.19), qy + Inches(0.72), w - Inches(0.38), h - Inches(0.80))
             tf_l = tb_l.text_frame
             tf_l.word_wrap = True
@@ -441,7 +396,6 @@ class BUMNDeck:
         side_rect.fill.fore_color.rgb = rgb(CARD_NEUTRAL)
         side_rect.line.fill.background()
 
-        # Sidebar Header: "Key insights"
         tb_sh = slide.shapes.add_textbox(Inches(9.28), Inches(1.26), Inches(3.65), Inches(0.25))
         tf_sh = tb_sh.text_frame
         tf_sh.margin_left = tf_sh.margin_top = tf_sh.margin_right = tf_sh.margin_bottom = 0
@@ -451,13 +405,11 @@ class BUMNDeck:
         psh.font.bold = True
         psh.font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Rule line under insights header
         rule_i = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(9.28), Inches(1.57), Inches(3.65), Inches(0.015))
         rule_i.fill.solid()
         rule_i.fill.fore_color.rgb = rgb(RULE_BLUE)
         rule_i.line.fill.background()
 
-        # Lead sentence
         tb_lead = slide.shapes.add_textbox(Inches(9.28), Inches(1.70), Inches(3.65), Inches(0.48))
         tf_lead = tb_lead.text_frame
         tf_lead.word_wrap = True
@@ -468,7 +420,6 @@ class BUMNDeck:
         plead.font.bold = True
         plead.font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Insight items
         ins_data = insights or [
             {"badge": "A", "title": "Quick wins", "text": "Improve occupancy and competitor visibility with existing data; no system integration required."},
             {"badge": "B", "title": "Major projects", "text": "The core dynamic fare engines; high value but require automated pricing approval workflows."},
@@ -482,13 +433,11 @@ class BUMNDeck:
             t_val = ins.get("title", "")
             txt_val = ins.get("text", "")
 
-            # Insight divider
             i_rule = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(9.28), curr_iy - Inches(0.10), Inches(3.65), Inches(0.01))
             i_rule.fill.solid()
             i_rule.fill.fore_color.rgb = rgb(BORDER_LIGHT)
             i_rule.line.fill.background()
 
-            # Badge pill
             i_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(9.28), curr_iy, Inches(0.24), Inches(0.24))
             i_badge.fill.solid()
             i_badge.fill.fore_color.rgb = rgb(NAVY_PRIMARY if b_val == "A" else BADGE_GRAY)
@@ -500,7 +449,6 @@ class BUMNDeck:
             p_ib.font.bold = True
             p_ib.font.color.rgb = rgb(WHITE)
 
-            # Insight text
             tb_it = slide.shapes.add_textbox(Inches(9.60), curr_iy - Inches(0.02), Inches(3.30), Inches(0.85))
             tf_it = tb_it.text_frame
             tf_it.word_wrap = True
@@ -516,7 +464,6 @@ class BUMNDeck:
 
             curr_iy += Inches(1.05)
 
-        self._footer(slide)
         return slide
 
     slide_2_matrix = prioritization_matrix
@@ -537,7 +484,7 @@ class BUMNDeck:
     ):
         """
         Slide 3: 2x2 Analytical Module Cards + Release bar + Right Preview Dashboard.
-        Exactly matches Slide 3 in Framework Task Force BUMN.pptx.
+        Matches Slide 3 in Framework Task Force BUMN.pptx.
         """
         slide = self._add_content_slide()
         self._header(slide, title, section_label, badge)
@@ -562,7 +509,6 @@ class BUMNDeck:
         prh.font.bold = True
         prh.font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Right caption
         tb_cap = slide.shapes.add_textbox(Inches(7.78), Inches(1.37), Inches(5.15), Inches(0.19))
         tf_cap = tb_cap.text_frame
         tf_cap.margin_left = tf_cap.margin_top = tf_cap.margin_right = tf_cap.margin_bottom = 0
@@ -571,13 +517,12 @@ class BUMNDeck:
         pcap.font.size = Pt(10)
         pcap.font.color.rgb = rgb(MUTED_TEXT)
 
-        # 4 Cards Geometry (2 columns x 2 rows)
         c_w = Inches(3.44)
         card_coords = [
-            (Inches(0.40), Inches(1.54), Inches(0.79)),  # Card 01
-            (Inches(4.06), Inches(1.54), Inches(4.44)),  # Card 02
-            (Inches(0.40), Inches(3.88), Inches(0.79)),  # Card 03
-            (Inches(4.06), Inches(3.88), Inches(4.44)),  # Card 04
+            (Inches(0.40), Inches(1.54), Inches(0.79)),
+            (Inches(4.06), Inches(1.54), Inches(4.44)),
+            (Inches(0.40), Inches(3.88), Inches(0.79)),
+            (Inches(4.06), Inches(3.88), Inches(4.44)),
         ]
 
         for i, card in enumerate(cards[:4]):
@@ -588,7 +533,6 @@ class BUMNDeck:
             c_data = card.get("data", "")
             c_outcome = card.get("outcome", "")
 
-            # Number Text
             tb_n = slide.shapes.add_textbox(col_x, top_y, Inches(0.36), Inches(0.25))
             tb_n.text_frame.margin_left = tb_n.text_frame.margin_top = tb_n.text_frame.margin_right = tb_n.text_frame.margin_bottom = 0
             pn = tb_n.text_frame.paragraphs[0]
@@ -597,7 +541,6 @@ class BUMNDeck:
             pn.font.bold = True
             pn.font.color.rgb = rgb(NAVY_PRIMARY)
 
-            # Title Text
             tb_t = slide.shapes.add_textbox(title_x, top_y, Inches(3.06), Inches(0.25))
             tb_t.text_frame.margin_left = tb_t.text_frame.margin_top = tb_t.text_frame.margin_right = tb_t.text_frame.margin_bottom = 0
             pt = tb_t.text_frame.paragraphs[0]
@@ -606,7 +549,6 @@ class BUMNDeck:
             pt.font.bold = True
             pt.font.color.rgb = rgb(NAVY_PRIMARY)
 
-            # Objective Text
             tb_o = slide.shapes.add_textbox(col_x, top_y + Inches(0.31), c_w, Inches(0.36))
             tf_o = tb_o.text_frame
             tf_o.word_wrap = True
@@ -614,7 +556,6 @@ class BUMNDeck:
             po = tf_o.paragraphs[0]
             self._format_runs(po, c_obj, font_size=Pt(10), font_color=rgb(BODY_DARK))
 
-            # DATA NEEDED label
             tb_dl = slide.shapes.add_textbox(col_x, top_y + Inches(0.74), c_w, Inches(0.15))
             tb_dl.text_frame.margin_left = tb_dl.text_frame.margin_top = tb_dl.text_frame.margin_right = tb_dl.text_frame.margin_bottom = 0
             pdl = tb_dl.text_frame.paragraphs[0]
@@ -623,7 +564,6 @@ class BUMNDeck:
             pdl.font.bold = True
             pdl.font.color.rgb = rgb(NAVY_PRIMARY)
 
-            # DATA NEEDED content
             tb_dt = slide.shapes.add_textbox(col_x, top_y + Inches(0.90), c_w, Inches(0.50))
             tf_dt = tb_dt.text_frame
             tf_dt.word_wrap = True
@@ -631,7 +571,6 @@ class BUMNDeck:
             pdt = tf_dt.paragraphs[0]
             self._format_runs(pdt, c_data, font_size=Pt(9), font_color=rgb(MUTED_TEXT))
 
-            # OUTCOME label
             tb_ol = slide.shapes.add_textbox(col_x, top_y + Inches(1.46), c_w, Inches(0.15))
             tb_ol.text_frame.margin_left = tb_ol.text_frame.margin_top = tb_ol.text_frame.margin_right = tb_ol.text_frame.margin_bottom = 0
             pol = tb_ol.text_frame.paragraphs[0]
@@ -640,7 +579,6 @@ class BUMNDeck:
             pol.font.bold = True
             pol.font.color.rgb = rgb(NAVY_PRIMARY)
 
-            # OUTCOME content
             tb_ot = slide.shapes.add_textbox(col_x, top_y + Inches(1.63), c_w, Inches(0.50))
             tf_ot = tb_ot.text_frame
             tf_ot.word_wrap = True
@@ -648,14 +586,12 @@ class BUMNDeck:
             pot = tf_ot.paragraphs[0]
             self._format_runs(pot, c_outcome, font_size=Pt(9), font_color=rgb(MUTED_TEXT))
 
-        # Bottom Release Bar
         rel = release_info or {
             "tag": "RELEASE 1",
             "beta": "Beta   W2 Nov 26",
             "prototype": "Prototype   W2 Dec 26",
         }
 
-        # Release Tag Box (x=0.40, y=6.18, w=1.53, h=0.47)
         rel_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.40), Inches(6.18), Inches(1.53), Inches(0.47))
         rel_box.fill.solid()
         rel_box.fill.fore_color.rgb = rgb(NAVY_PRIMARY)
@@ -667,7 +603,6 @@ class BUMNDeck:
         p_rb.font.bold = True
         p_rb.font.color.rgb = rgb(WHITE)
 
-        # Release Beta Text
         tb_beta = slide.shapes.add_textbox(Inches(2.15), Inches(6.22), Inches(2.36), Inches(0.39))
         tb_beta.text_frame.margin_left = tb_beta.text_frame.margin_top = tb_beta.text_frame.margin_right = tb_beta.text_frame.margin_bottom = 0
         p_b = tb_beta.text_frame.paragraphs[0]
@@ -676,7 +611,6 @@ class BUMNDeck:
         p_b.font.bold = True
         p_b.font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Release Prototype Text
         tb_proto = slide.shapes.add_textbox(Inches(4.64), Inches(6.22), Inches(2.78), Inches(0.39))
         tb_proto.text_frame.margin_left = tb_proto.text_frame.margin_top = tb_proto.text_frame.margin_right = tb_proto.text_frame.margin_bottom = 0
         p_p = tb_proto.text_frame.paragraphs[0]
@@ -685,7 +619,6 @@ class BUMNDeck:
         p_p.font.bold = True
         p_p.font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Right Dashboard Preview Frame / Image (pos: x=7.78, y=1.58, w=5.35, h=5.35)
         px = Inches(7.78)
         py = Inches(1.58)
         pw = Inches(5.35)
@@ -694,7 +627,6 @@ class BUMNDeck:
         if preview_image and os.path.exists(preview_image):
             slide.shapes.add_picture(preview_image, px, py, pw, ph)
         else:
-            # Elegant placeholder card frame matching slide 3
             p_frame = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, px, py, pw, ph)
             p_frame.fill.solid()
             p_frame.fill.fore_color.rgb = rgb(CARD_NEUTRAL)
@@ -709,7 +641,6 @@ class BUMNDeck:
             ppf.font.size = Pt(11)
             ppf.font.color.rgb = rgb(MUTED_TEXT)
 
-        self._footer(slide)
         return slide
 
     slide_3_modules = quick_wins_modules
@@ -726,12 +657,11 @@ class BUMNDeck:
     ):
         """
         Slide 4: 3-Stage Pipeline (Data Sourcing -> Modelling & AI -> Recommendation).
-        Exactly matches Slide 4 in Framework Task Force BUMN.pptx.
+        Matches Slide 4 in Framework Task Force BUMN.pptx.
         """
         slide = self._add_content_slide()
         self._header(slide, title, section_label, badge)
 
-        # Outer canvas container
         outer = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.34), Inches(1.13), Inches(12.72), Inches(5.75))
         outer.fill.solid()
         outer.fill.fore_color.rgb = rgb(WHITE)
@@ -766,19 +696,16 @@ class BUMNDeck:
         ]
         stgs = stages or default_stages
 
-        # Column 1: Data Sourcing (w=4.73)
         col1_x = Inches(0.43)
         col1_w = Inches(4.73)
         col_y = Inches(1.26)
         col_h = Inches(5.45)
 
-        # Box 1
         b1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, col_y, col1_w, col_h)
         b1.fill.solid()
         b1.fill.fore_color.rgb = rgb(CARD_NEUTRAL)
         b1.line.color.rgb = rgb(BORDER_LIGHT)
 
-        # Badge Circle 1
         circ1 = slide.shapes.add_shape(MSO_SHAPE.OVAL, col1_x + Inches(0.12), col_y + Inches(0.12), Inches(0.30), Inches(0.30))
         circ1.fill.solid()
         circ1.fill.fore_color.rgb = rgb(NAVY_PRIMARY)
@@ -790,7 +717,6 @@ class BUMNDeck:
         p_c1.font.bold = True
         p_c1.font.color.rgb = rgb(WHITE)
 
-        # Col 1 Title
         tb_t1 = slide.shapes.add_textbox(col1_x + Inches(0.50), col_y + Inches(0.12), Inches(4.00), Inches(0.30))
         tb_t1.text_frame.margin_left = tb_t1.text_frame.margin_top = tb_t1.text_frame.margin_right = tb_t1.text_frame.margin_bottom = 0
         pt1 = tb_t1.text_frame.paragraphs[0]
@@ -799,13 +725,12 @@ class BUMNDeck:
         pt1.font.bold = True
         pt1.font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Col 1 Cards (2x2 grid inside col 1)
         c1_cards = stgs[0].get("cards", [])
         c1_grid = [
-            (col1_x + Inches(0.14), col_y + Inches(0.66), Inches(2.17), Inches(2.00)),  # Top Left
-            (col1_x + Inches(2.43), col_y + Inches(0.66), Inches(2.17), Inches(2.00)),  # Top Right
-            (col1_x + Inches(0.14), col_y + Inches(2.80), Inches(2.17), Inches(2.35)),  # Bot Left
-            (col1_x + Inches(2.43), col_y + Inches(2.80), Inches(2.17), Inches(2.35)),  # Bot Right
+            (col1_x + Inches(0.14), col_y + Inches(0.66), Inches(2.17), Inches(2.00)),
+            (col1_x + Inches(2.43), col_y + Inches(0.66), Inches(2.17), Inches(2.00)),
+            (col1_x + Inches(0.14), col_y + Inches(2.80), Inches(2.17), Inches(2.35)),
+            (col1_x + Inches(2.43), col_y + Inches(2.80), Inches(2.17), Inches(2.35)),
         ]
         for idx, (cx, cy, cw, ch) in enumerate(c1_grid[:len(c1_cards)]):
             c_info = c1_cards[idx]
@@ -870,7 +795,6 @@ class BUMNDeck:
         pt2.font.bold = True
         pt2.font.color.rgb = rgb(NAVY_PRIMARY)
 
-        # Col 2 Cards (Machine Learning & Gen AI)
         c2_cards = stgs[1].get("cards", [])
         if len(c2_cards) >= 1:
             box_ml = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + Inches(0.18), col_y + Inches(0.66), Inches(3.26), Inches(2.20))
@@ -971,7 +895,6 @@ class BUMNDeck:
             r2.font.size = Pt(9.5)
             r2.font.color.rgb = rgb(BODY_DARK)
 
-        self._footer(slide)
         return slide
 
     slide_4_architecture = implementation_pipeline
@@ -1015,19 +938,16 @@ class BUMNDeck:
             s_title = s.get("title", "")
             s_desc = s.get("desc", "")
 
-            # Step card
             sc = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, card_w, card_h)
             sc.fill.solid()
             sc.fill.fore_color.rgb = rgb(CARD_ACTIVE if i == 1 else CARD_NEUTRAL)
             sc.line.color.rgb = rgb(BORDER_BLUE if i == 1 else BORDER_LIGHT)
 
-            # Top accent bar
             top_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, card_w, Inches(0.06))
             top_bar.fill.solid()
             top_bar.fill.fore_color.rgb = rgb(NAVY_PRIMARY if i == 1 else BLUE_SECTION)
             top_bar.line.fill.background()
 
-            # Number badge pill
             nb = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x + Inches(0.15), y + Inches(0.20), Inches(0.45), Inches(0.45))
             nb.fill.solid()
             nb.fill.fore_color.rgb = rgb(NAVY_PRIMARY if i == 1 else BLUE_SLATE)
@@ -1039,7 +959,6 @@ class BUMNDeck:
             p_nb.font.bold = True
             p_nb.font.color.rgb = rgb(WHITE)
 
-            # Stage name
             tb_st = slide.shapes.add_textbox(x + Inches(0.15), y + Inches(0.75), card_w - Inches(0.30), Inches(0.30))
             tb_st.text_frame.margin_left = tb_st.text_frame.margin_top = tb_st.text_frame.margin_right = tb_st.text_frame.margin_bottom = 0
             pst = tb_st.text_frame.paragraphs[0]
@@ -1048,7 +967,6 @@ class BUMNDeck:
             pst.font.bold = True
             pst.font.color.rgb = rgb(MUTED_TEXT)
 
-            # Step Title
             tb_t = slide.shapes.add_textbox(x + Inches(0.15), y + Inches(1.10), card_w - Inches(0.30), Inches(0.50))
             tf_t = tb_t.text_frame
             tf_t.word_wrap = True
@@ -1059,13 +977,11 @@ class BUMNDeck:
             pt.font.bold = True
             pt.font.color.rgb = rgb(NAVY_PRIMARY)
 
-            # Rule inside card
             rule = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x + Inches(0.15), y + Inches(1.70), card_w - Inches(0.30), Inches(0.01))
             rule.fill.solid()
             rule.fill.fore_color.rgb = rgb(BORDER_BLUE if i == 1 else BORDER_LIGHT)
             rule.line.fill.background()
 
-            # Description
             tb_d = slide.shapes.add_textbox(x + Inches(0.15), y + Inches(1.85), card_w - Inches(0.30), card_h - Inches(2.00))
             tf_d = tb_d.text_frame
             tf_d.word_wrap = True
@@ -1073,7 +989,6 @@ class BUMNDeck:
             pd = tf_d.paragraphs[0]
             self._format_runs(pd, s_desc, font_size=Pt(10), font_color=rgb(BODY_DARK))
 
-            # Arrow indicator between cards
             if i < n - 1:
                 arr = slide.shapes.add_shape(MSO_SHAPE.OVAL, x + card_w + Inches(0.03), y + Inches(2.20), Inches(0.16), Inches(0.16))
                 arr.fill.solid()
@@ -1086,7 +1001,6 @@ class BUMNDeck:
                 pa.font.bold = True
                 pa.font.color.rgb = rgb(WHITE)
 
-        self._footer(slide)
         return slide
 
     slide_5_journey = flow_journey
@@ -1106,12 +1020,11 @@ class BUMNDeck:
     ):
         """
         Slide 6: Delivery Timeline Gantt with Phase bands & "We are here" red milestone pin.
-        Exactly matches Slide 6 in Framework Task Force BUMN.pptx.
+        Matches Slide 6 in Framework Task Force BUMN.pptx.
         """
         slide = self._add_content_slide()
         self._header(slide, title, section_label, badge)
 
-        # Headers: Phase & Activity (y=1.84)
         x_phase = Inches(0.56)
         w_phase = Inches(0.97)
         x_task = Inches(1.56)
@@ -1120,7 +1033,6 @@ class BUMNDeck:
         w_grid = Inches(8.40)
         y_top = Inches(2.11)
 
-        # Header labels
         tb_hp = slide.shapes.add_textbox(x_phase, Inches(1.84), w_phase, Inches(0.20))
         tb_hp.text_frame.margin_left = tb_hp.text_frame.margin_top = tb_hp.text_frame.margin_right = tb_hp.text_frame.margin_bottom = 0
         php = tb_hp.text_frame.paragraphs[0]
@@ -1137,9 +1049,8 @@ class BUMNDeck:
         pha.font.bold = True
         pha.font.color.rgb = rgb(BLUE_SLATE)
 
-        # Tasks & Rows (8 tasks)
         num_tasks = len(tasks)
-        row_h = Inches(0.555)  # exactly matches 4.44" / 8 = 0.555"
+        row_h = Inches(0.555)
 
         for i, tsk in enumerate(tasks):
             ry = y_top + i * row_h
@@ -1147,7 +1058,6 @@ class BUMNDeck:
             start_frac = float(tsk.get("start", 0.0))
             dur_frac = float(tsk.get("dur", 0.20))
 
-            # Task Text
             tb_t = slide.shapes.add_textbox(x_task, ry + Inches(0.08), w_task, row_h - Inches(0.10))
             tf_t = tb_t.text_frame
             tf_t.word_wrap = True
@@ -1157,13 +1067,11 @@ class BUMNDeck:
             pt.font.size = Pt(11)
             pt.font.color.rgb = rgb(DARK_SLATE)
 
-            # Separator line across slide width (Sep 0 to Sep 7, w=11.22)
             sep = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x_task, ry + row_h, Inches(11.22), Inches(0.01))
             sep.fill.solid()
             sep.fill.fore_color.rgb = rgb(BORDER_LIGHT if i % 2 == 0 else BORDER_MID)
             sep.line.fill.background()
 
-            # Gantt bar
             bx = x_grid + start_frac * w_grid
             bw = dur_frac * w_grid
             bh = Inches(0.24)
@@ -1174,7 +1082,6 @@ class BUMNDeck:
             bar.fill.fore_color.rgb = rgb(BLUE_SECTION if i % 2 == 0 else NAVY_PRIMARY)
             bar.line.fill.background()
 
-        # Phase Bands (Discover, Analyze & design, Build & test, Release)
         curr_py = y_top
         for p_idx, ph in enumerate(phases):
             p_name = ph.get("name", f"Phase {p_idx}")
@@ -1198,19 +1105,16 @@ class BUMNDeck:
 
             curr_py += span * row_h
 
-        # "We are here" red milestone pin
         cp = current_point or {"frac": 0.70, "label": "We are here"}
         c_frac = float(cp.get("frac", 0.70))
         c_label = cp.get("label", "We are here")
         pin_x = x_grid + c_frac * w_grid
 
-        # Vertical line
         v_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, pin_x, y_top - Inches(0.15), Inches(0.02), Inches(4.65))
         v_line.fill.solid()
         v_line.fill.fore_color.rgb = rgb(ALERT_RED)
         v_line.line.fill.background()
 
-        # Red label pill at bottom
         pill = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, pin_x - Inches(0.70), Inches(6.69), Inches(1.39), Inches(0.22))
         pill.fill.solid()
         pill.fill.fore_color.rgb = rgb(ALERT_RED)
@@ -1222,7 +1126,6 @@ class BUMNDeck:
         p_pill.font.bold = True
         p_pill.font.color.rgb = rgb(WHITE)
 
-        # Note at bottom
         tb_note = slide.shapes.add_textbox(x_phase, Inches(6.69), Inches(5.28), Inches(0.22))
         tb_note.text_frame.margin_left = tb_note.text_frame.margin_top = tb_note.text_frame.margin_right = tb_note.text_frame.margin_bottom = 0
         pn = tb_note.text_frame.paragraphs[0]
@@ -1230,7 +1133,6 @@ class BUMNDeck:
         pn.font.size = Pt(10)
         pn.font.color.rgb = rgb(MUTED_GRAY)
 
-        self._footer(slide)
         return slide
 
     slide_6_timeline = timeline_delivery
@@ -1247,7 +1149,7 @@ class BUMNDeck:
     ):
         """
         Slide 7: Bus fleet background picture + BUMN & DAMRI logos top-right + bottom "Terima kasih" banner.
-        Exactly matches Slide 7 in Framework Task Force BUMN.pptx.
+        Directly uses the original images from Slide 7 of Framework Task Force BUMN.pptx.
         """
         layout = self.prs.slide_layouts[0]
         slide = self.prs.slides.add_slide(layout)
@@ -1256,8 +1158,10 @@ class BUMNDeck:
             sp.getparent().remove(sp)
         self.slide_index += 1
 
-        # 1. Background image
-        img_path = bg_image or os.path.join(BACKGROUNDS_DIR, "closing-damri.jpg")
+        img_path = bg_image or os.path.join(BACKGROUNDS_DIR, "closing-damri.png")
+        if not os.path.exists(img_path):
+            img_path = os.path.join(BACKGROUNDS_DIR, "closing-damri.jpg")
+
         if os.path.exists(img_path):
             slide.shapes.add_picture(img_path, Inches(0), Inches(0), Inches(13.333), Inches(7.500))
         else:
@@ -1265,22 +1169,19 @@ class BUMNDeck:
             bg_rect.fill.solid()
             bg_rect.fill.fore_color.rgb = rgb(NAVY_PRIMARY)
 
-        # 2. Logos on Top Right
-        bumn_logo = os.path.join(LOGOS_DIR, "bumn-white.png")
-        damri_logo = os.path.join(LOGOS_DIR, "damri-white.png")
+        bumn_logo = os.path.join(LOGOS_DIR, "bumn-logo.png")
+        damri_logo = os.path.join(LOGOS_DIR, "damri-logo.png")
 
         if os.path.exists(bumn_logo):
             slide.shapes.add_picture(bumn_logo, Inches(9.99), Inches(0.26), Inches(1.10), Inches(0.57))
         if os.path.exists(damri_logo):
             slide.shapes.add_picture(damri_logo, Inches(11.30), Inches(0.39), Inches(1.83), Inches(0.30))
 
-        # 3. Bottom Banner (Rectangle 5 at y=5.92, h=1.20)
         banner = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(5.92), Inches(13.333), Inches(1.20))
         banner.fill.solid()
         banner.fill.fore_color.rgb = rgb(NAVY_PRIMARY)
         banner.line.fill.background()
 
-        # 4. Title: "Terima kasih" (TextBox 8 at y=6.27, h=0.50)
         tb_t = slide.shapes.add_textbox(Inches(0.39), Inches(6.15), Inches(12.55), Inches(0.50))
         tf_t = tb_t.text_frame
         tf_t.word_wrap = True
@@ -1292,19 +1193,14 @@ class BUMNDeck:
         pt.font.bold = True
         pt.font.color.rgb = rgb(WHITE)
 
-        # 5. Optional Subtitle / Contact
-        extra = []
-        if subtitle:
-            extra.append(subtitle)
-        if contact:
-            extra.append(contact)
-        if extra:
+        if subtitle or contact:
+            extra = "   |   ".join(filter(None, [subtitle, contact]))
             tb_s = slide.shapes.add_textbox(Inches(0.39), Inches(6.65), Inches(12.55), Inches(0.35))
             tf_s = tb_s.text_frame
             tf_s.word_wrap = True
             tf_s.margin_left = tf_s.margin_top = tf_s.margin_right = tf_s.margin_bottom = 0
             ps = tf_s.paragraphs[0]
-            ps.text = "   |   ".join(extra)
+            ps.text = extra
             ps.font.name = FONT_FAMILY
             ps.font.size = Pt(12)
             ps.font.color.rgb = rgb(CARD_ACTIVE)

@@ -1,7 +1,7 @@
 ---
 name: bumn-report-formatter
-description: "Format transformation roadmaps, analytical frameworks, and project updates into PowerPoint (.pptx) decks using the 7 official Taskforce BP BUMN & Perum DAMRI slide templates — BUMN Navy #002060, headline blue #003C79, section blue #174EA6, with BUMN & DAMRI logos, confidential footer, 2x2 prioritization matrix, analytical module cards, implementation pipeline, flow journey, timeline delivery Gantt, and closing slides. Supports Bahasa Indonesia (default) and English."
-version: "2.0.0"
+description: "Format transformation roadmaps, analytical frameworks, and project updates into PowerPoint (.pptx) decks using the 7 official Taskforce BP BUMN & Perum DAMRI slide templates — BUMN Navy #002060, headline blue #003C79, section blue #174EA6, with exact original BUMN & DAMRI slide logos, confidential footer, 2x2 prioritization matrix, analytical module cards, implementation pipeline, flow journey, timeline delivery Gantt, and closing slides."
+version: "2.1.0"
 tags:
   - bumn
   - damri
@@ -17,12 +17,10 @@ scripts:
   - scripts/rebuild_template.py
 assets:
   - assets/template.pptx
-  - assets/logos/bumn-primary.png
-  - assets/logos/bumn-white.png
-  - assets/logos/damri-primary.png
-  - assets/logos/damri-white.png
-  - assets/backgrounds/cover-damri.jpg
-  - assets/backgrounds/closing-damri.jpg
+  - assets/logos/bumn-logo.png
+  - assets/logos/damri-logo.png
+  - assets/backgrounds/cover-damri.png
+  - assets/backgrounds/closing-damri.png
 ---
 
 # BUMN & DAMRI Report Formatter
@@ -37,19 +35,18 @@ Engine generator dibangun oleh `scripts/bumn_deck.py` di atas basis template res
 
 | Template | Metode Builder | Mengacu pada Master PPT | Deskripsi & Komponen |
 |---|---|---|---|
-| **Slide 1** | `cover(title, subtitle)` | Slide 1 Master | **Halaman Sampul**: 1 foto armada bus DAMRI (*full-bleed*), logo BUMN dan DAMRI di sudut kanan atas, serta banner gelap di bagian bawah dengan judul dan subjudul. |
-| **Slide 2** | `prioritization_matrix(quadrants, insights, ...)` | Slide 2 Master | **Matriks Prioritas Impact vs Effort**: Matriks 2x2 (4 kuadran: *Quick wins*, *Major projects*, *Low-hanging fruit*, *Hygiene factors*) dilengkapi panel kanan *Key insights* dan footer konfidensial resmi. |
+| **Slide 1** | `cover(title, subtitle)` | Slide 1 Master | **Halaman Sampul**: Menggunakan foto asli armada bus DAMRI, logo asli BUMN dan DAMRI di sudut kanan atas, serta banner gelap di bagian bawah dengan judul dan subjudul. |
+| **Slide 2** | `prioritization_matrix(quadrants, insights, ...)` | Slide 2 Master | **Matriks Prioritas Impact vs Effort**: Matriks 2x2 (4 kuadran: *Quick wins*, *Major projects*, *Low-hanging fruit*, *Hygiene factors*) dilengkapi panel kanan *Key insights* dan footer konfidensial master. |
 | **Slide 3** | `quick_wins_modules(cards, preview_title, ...)` | Slide 3 Master | **Modul Cepat & Rilis 1**: 4 kartu modul analitis (2x2 grid) berisi *DATA NEEDED* dan *OUTCOME*, bar milestone rilis (*Beta* & *Prototype*), serta frame preview dashboard di sebelah kanan. |
 | **Slide 4** | `implementation_pipeline(stages, ...)` | Slide 4 Master | **Arsitektur Implementasi & Alur Data**: Pipeline 3 tahap (*Data Sourcing & Pipeline* → *Modelling & Optimization* → *Recommendation*) dengan konektor panah. |
 | **Slide 5** | `flow_journey(steps, ...)` | Slide 5 Master | **Flow Journey**: Alur perjalanan operasional bertahap (*Customer Intent* → *Dynamic Fare Engine* → *Seat Allocation* → *Dispatch* → *Feedback*). |
 | **Slide 6** | `timeline_delivery(phases, tasks, ...)` | Slide 6 Master | **Timeline Delivery Gantt**: Pita fase (*Discover*, *Analyze*, *Build*, *Release*), daftar aktivitas, schedule bar, penanda milestone *"We are here"* merah, dan catatan kaki. |
-| **Slide 7** | `closing(title, subtitle, contact)` | Slide 7 Master | **Halaman Penutup**: Foto armada bus DAMRI, logo BUMN dan DAMRI di sudut kanan atas, banner penutup bertuliskan "Terima kasih" dan kontak resmi. |
+| **Slide 7** | `closing(title, subtitle, contact)` | Slide 7 Master | **Halaman Penutup**: Foto asli armada bus DAMRI, logo asli BUMN dan DAMRI di sudut kanan atas, banner penutup bertuliskan "Terima kasih" dan kontak resmi. |
 
-Setiap slide konten (Slide 2 s.d. Slide 6) secara otomatis dilengkapi dengan:
-- **Header Standar**: `section-label` (Arial 14pt bold, `#174EA6`) dan `headline` (Arial 18pt bold, `#003C79`).
+Setiap slide konten (Slide 2 s.d. Slide 6) mewarisi langsung dari master layout BUMN:
 - **Logo BUMN**: Sudut kanan atas pada koordinat `(12.05", 0.22")`.
 - **Garis Pembatas Bawah**: Di atas footer (`y=7.09"`).
-- **Footer Konfidensial Resmi**:
+- **Footer Konfidensial Resmi Tunggal** (tanpa duplikasi/tumpuk):
   > `CONFIDENTIAL AND PROPRIETARY | Any use of this material without specific permission of State-Owned Enterprises Regulatory Agency is strictly prohibited`
 - **Nomor Halaman**: Sudut kanan bawah (`y=7.18"`).
 
@@ -86,21 +83,6 @@ deck.prioritization_matrix(
         "C": {"title": "Low-hanging fruit", "subtitle": "Low impact · low effort", "count": 2, "items": ["Customer Segmentation"]},
         "D": {"title": "Hygiene factors", "subtitle": "Low impact · high effort", "count": 3, "items": ["Scenario Simulator"]},
     }
-)
-
-# Slide 3: Modul Analitis
-deck.quick_wins_modules(
-    title="Quick Wins & Output Release 1",
-    section_label="Transformation Plan - Dynamic Pricing",
-    cards=[
-        {
-            "num": "01",
-            "title": "Load Factor Prediction",
-            "objective": "Forecast departure occupancy early enough to act.",
-            "data": "2–3 years of reservation bookings, scheduled vs. operated capacity.",
-            "outcome": "Capacity matched to demand; +2–4 pts load factor on managed corridors."
-        }
-    ]
 )
 
 # Slide 7: Penutup
