@@ -24,7 +24,7 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
-from pptx.util import Inches, Pt
+from pptx.util import Inches, Pt, Emu
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL_DIR = os.path.dirname(HERE)
@@ -202,14 +202,14 @@ class BUMNDeck:
             bg_rect.fill.solid()
             bg_rect.fill.fore_color.rgb = rgb(NAVY_PRIMARY)
 
-        # 2. Logos on Top Right (exact Picture 6 and Picture 7 from Slide 1)
+        # 2. Logos on Top Right (exact coordinates matching Framework Task Force BUMN.pptx)
         bumn_logo = os.path.join(LOGOS_DIR, "bumn-logo.png")
         damri_logo = os.path.join(LOGOS_DIR, "damri-logo.png")
 
         if os.path.exists(bumn_logo):
-            slide.shapes.add_picture(bumn_logo, Inches(9.99), Inches(0.26), Inches(1.10), Inches(0.57))
+            slide.shapes.add_picture(bumn_logo, Emu(9135882), Emu(234708), Emu(1001751), Emu(524974))
         if os.path.exists(damri_logo):
-            slide.shapes.add_picture(damri_logo, Inches(11.30), Inches(0.39), Inches(1.83), Inches(0.30))
+            slide.shapes.add_picture(damri_logo, Emu(10329441), Emu(359206), Emu(1669227), Emu(275979))
 
         # 3. Bottom Banner (Rectangle 5 at y=5.92", h=1.20")
         banner = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(5.92), Inches(13.333), Inches(1.20))
@@ -1173,9 +1173,9 @@ class BUMNDeck:
         damri_logo = os.path.join(LOGOS_DIR, "damri-logo.png")
 
         if os.path.exists(bumn_logo):
-            slide.shapes.add_picture(bumn_logo, Inches(9.99), Inches(0.26), Inches(1.10), Inches(0.57))
+            slide.shapes.add_picture(bumn_logo, Emu(9135882), Emu(234708), Emu(1001751), Emu(524974))
         if os.path.exists(damri_logo):
-            slide.shapes.add_picture(damri_logo, Inches(11.30), Inches(0.39), Inches(1.83), Inches(0.30))
+            slide.shapes.add_picture(damri_logo, Emu(10329441), Emu(359206), Emu(1669227), Emu(275979))
 
         banner = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(5.92), Inches(13.333), Inches(1.20))
         banner.fill.solid()
